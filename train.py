@@ -1,4 +1,6 @@
-# Import necessary libraries
+pip install git+https://www.github.com/keras-team/keras-contrib.git
+
+# Step 2: Import necessary libraries
 import os
 import numpy as np
 from PIL import Image
@@ -16,13 +18,12 @@ from sklearn.metrics import classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Set seed
+# Step 3: Set seed
 seed = 42
 np.random.seed(seed)
 tf.random.set_seed(seed)
 
-# Load grayscale images
-data_dir = '/content/drive/MyDrive/data'  # Mount Google Drive first
+# Step 4: Load grayscale images
 images, labels = [], []
 
 def load_images(folder):
@@ -38,14 +39,17 @@ def load_images(folder):
             elif 'ring' in file:
                 labels.append(2)
 
+data_dir="/content/drive/MyDrive/data"
 load_images(data_dir)
 
 X = np.array(images) / 255.0
 y = to_categorical(np.array(labels))
+num_classes = y.shape[1]
+print(num_classes)
 
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=seed)
 
-# Model
+# Step 5: Model
 input_shape = X_train.shape[1:]
 x = Input(shape=input_shape)
 
@@ -65,7 +69,7 @@ out = Dense(3, activation='softmax')(out_caps)
 model = Model(x, out)
 model.compile(loss='categorical_crossentropy', optimizer=optimizers.Adam(1e-4), metrics=['accuracy'])
 
-# Train
+# Step 6: Train
 class_weights = dict(enumerate(compute_class_weight('balanced', classes=np.unique(np.argmax(y_train, axis=1)), y=np.argmax(y_train, axis=1))))
 
 datagen = ImageDataGenerator(
@@ -82,7 +86,7 @@ callbacks = [EarlyStopping(patience=10, restore_best_weights=True), ReduceLROnPl
 train_gen = datagen.flow(X_train, y_train, batch_size=32, seed=seed)
 model.fit(train_gen, validation_data=(X_val, y_val), epochs=100, callbacks=callbacks, class_weight=class_weights)
 
-# Evaluation
+# Step 7: Evaluation
 y_pred = np.argmax(model.predict(X_val), axis=1)
 y_true = np.argmax(y_val, axis=1)
 print(classification_report(y_true, y_pred))
